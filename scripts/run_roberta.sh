@@ -19,8 +19,8 @@ python run.py --do_train \
 --lr_transformer 3e-5 \
 --max_grad_norm 1.0 \
 --evi_thresh 0.2 \
---evi_lambda ${LAMBDA} \
+--evi_lambda 2 \
 --warmup_ratio 0.06 \
 --num_train_epochs 30.0 \
---seed ${SEED} \
+--seed 3 \
 --num_class 97
