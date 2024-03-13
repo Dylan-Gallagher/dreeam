@@ -30,7 +30,7 @@ def add_args(parser):
     parser.add_argument("--test_batch_size", default=8, type=int,
                         help="Batch size for testing.")
     parser.add_argument("--eval_mode", default="single", type=str,
-                        choices=["single", "fushion"], 
+                        choices=["single", "fushion", "infer_only"],
                         help="Single-pass evaluation or evaluation with inference-stage fusion.")
     parser.add_argument("--gradient_accumulation_steps", default=1, type=int,
                         help="Number of updates steps to accumulate before performing a backward/update pass.")
