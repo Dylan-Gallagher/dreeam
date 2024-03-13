@@ -351,7 +351,7 @@ def main():
         if args.eval_mode == "infer_only":
             official_results = get_preds(args, model, test_features, tag="test")
 
-            with open("output_from_dreeam.json", "r") as file:
+            with open("output_from_dreeam.json", "w") as file:
                 json.dump(official_results, file, indent=4)
 
         elif args.eval_mode != "fushion":
