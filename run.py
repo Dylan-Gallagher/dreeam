@@ -21,6 +21,8 @@ from tqdm import tqdm
 import pandas as pd
 import pickle
 
+import json
+
 def load_input(batch, device, tag="dev"):
 
     input = {'input_ids': batch[0].to(device),
@@ -122,6 +124,58 @@ def train(args, model, train_features, dev_features):
     model.zero_grad()
     finetune(train_features, optimizer, args.num_train_epochs, num_steps)
 
+
+def get_preds(args, model, features, tag="dev"):
+    dataloader = DataLoader(features, batch_size=args.test_batch_size, shuffle=False, collate_fn=collate_fn,
+                            drop_last=False)
+    preds, evi_preds = [], []
+    scores, topks = [], []
+    attns = []
+
+    for batch in tqdm(dataloader, desc=f"Evaluating batches"):
+        model.eval()
+
+        if args.save_attn:
+            tag = "infer"
+
+        inputs = load_input(batch, args.device, tag)
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+            pred = outputs["rel_pred"]
+            pred = pred.cpu().numpy()
+            pred[np.isnan(pred)] = 0
+            preds.append(pred)
+
+            if "scores" in outputs:
+                scores.append(outputs["scores"].cpu().numpy())
+                topks.append(outputs["topks"].cpu().numpy())
+
+            if "evi_pred" in outputs:  # relation extraction and evidence extraction
+                evi_pred = outputs["evi_pred"]
+                evi_pred = evi_pred.cpu().numpy()
+                evi_preds.append(evi_pred)
+
+            if "attns" in outputs:  # attention recorded
+                attn = outputs["attns"]
+                attns.extend([a.cpu().numpy() for a in attn])
+
+    # Array of one-hot preds, where 0 is no relation
+    preds = np.concatenate(preds, axis=0)
+
+    if scores != []:
+        scores = np.concatenate(scores, axis=0)
+        topks = np.concatenate(topks, axis=0)
+
+    if evi_preds != []:
+        evi_preds = np.concatenate(evi_preds, axis=0)
+
+    official_results, results = to_official(preds, features, evi_preds=evi_preds, scores=scores, topks=topks)
+
+    return official_results
+
+
+
 def evaluate(args, model, features, tag="dev"):
     
     dataloader = DataLoader(features, batch_size=args.test_batch_size, shuffle=False, collate_fn=collate_fn, drop_last=False)
@@ -158,7 +212,9 @@ def evaluate(args, model, features, tag="dev"):
                 attns.extend([a.cpu().numpy() for a in attn])
 
 
+    # Array of one-hot preds, where 0 is no relation
     preds = np.concatenate(preds, axis=0)
+
 
     if scores != []:
         scores = np.concatenate(scores, axis=0)
@@ -168,6 +224,10 @@ def evaluate(args, model, features, tag="dev"):
         evi_preds = np.concatenate(evi_preds, axis=0)
     
     official_results, results = to_official(preds, features, evi_preds = evi_preds, scores = scores, topks = topks)
+
+    with open("dreeam_output.json", "w") as file:
+        json.dump(official_results, file, indent=4)
+
     
     if len(official_results) > 0:
         if tag == "dev":
@@ -287,10 +347,16 @@ def main():
         test_file = os.path.join(args.data_dir, args.test_file)
         
         test_features = read(test_file, tokenizer, transformer_type=args.transformer_type, max_seq_length=args.max_seq_length)
-        
-        if args.eval_mode != "fushion":
 
-            test_scores, test_output, official_results, results = evaluate(args, model, test_features, tag="test")   
+        if args.eval_mode == "infer_only":
+            official_results = get_preds(args, model, test_features, tag="test")
+
+            with open("output_from_dreeam.json", "r") as file:
+                json.dump(official_results, file, indent=4)
+
+        elif args.eval_mode != "fushion":
+
+            test_scores, test_output, official_results, results = evaluate(args, model, test_features, tag="test")
             wandb.log(test_scores)
 
             offi_path = os.path.join(args.load_path, args.pred_file)
