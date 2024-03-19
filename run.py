@@ -326,7 +326,7 @@ def main():
     if args.load_path != "": # load model from existing checkpoint
 
         model_path = os.path.join(args.load_path, "best.ckpt")
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, map_location=torch.device(args.device)))
 
     if args.do_train:  # Training
         
