@@ -296,9 +296,11 @@ def main():
     args.n_gpu = torch.cuda.device_count()
     args.device = device
 
+    num_model_relations = 97 if args.do_train else 26
+
     config = AutoConfig.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
-        num_labels=args.num_class,
+        num_labels=num_model_relations,
     )
     tokenizer = AutoTokenizer.from_pretrained(
         args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
@@ -329,7 +331,18 @@ def main():
         model.load_state_dict(torch.load(model_path, map_location=torch.device(args.device)))
 
     if args.do_train:  # Training
-        
+
+        # Freeze the earlier layers
+        for param in model.parameters():
+            param.requires_grad = False
+
+        # Unfreeze the last layer
+        for param in model.bilinear.parameters():
+            param.requires_grad = True
+
+        # Replace the last layer with a new one with the correct shape
+        model.bilinear = torch.nn.Linear(model.bilinear.in_features, 26)
+
         create_directory(save_path_)
         args.save_path = save_path_
 
