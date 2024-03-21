@@ -1,3 +1,5 @@
+import pdb
+
 import torch
 import torch.nn as nn
 from opt_einsum import contract
@@ -151,7 +153,6 @@ class DocREModel(nn.Module):
 
         return hss, rss, tss, ht_atts, rels_per_batch
 
-
     def forward_rel(self, hs, ts, rs):
         '''
         Forward computation for RE.
@@ -162,6 +163,8 @@ class DocREModel(nn.Module):
         Outputs:
             :logits: (num_ent_pairs_all_batches, num_rel_labels)
         '''
+
+        pdb.set_trace()
         
         hs = torch.tanh(self.head_extractor(torch.cat([hs, rs], dim=-1)))
         ts = torch.tanh(self.tail_extractor(torch.cat([ts, rs], dim=-1)))
@@ -171,7 +174,13 @@ class DocREModel(nn.Module):
 
         bl = (b1.unsqueeze(3) * b2.unsqueeze(2)).view(-1, self.emb_size * self.block_size)
         logits = self.bilinear(bl)
-        
+
+        # m, n = logits.shape
+        # mask = torch.zeros(size=(m, n))
+        # mask[:, :26] = 1.0
+        # masked_logits = logits * mask
+        #
+        # return masked_logits
         return logits
 
 
