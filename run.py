@@ -86,19 +86,19 @@ def train(args, model, train_features, dev_features):
                 if (step + 1) == len(train_dataloader) or (
                         args.evaluation_steps > 0 and num_steps % args.evaluation_steps == 0 and step % args.gradient_accumulation_steps == 0):
 
-                    dev_scores, dev_output, official_results, results = evaluate(args, model, dev_features, tag="dev")
-                    wandb.log(dev_scores, step=num_steps)
+                    # dev_scores, dev_output, official_results, results = evaluate(args, model, dev_features, tag="dev")  # Causing Problems
+                    # wandb.log(dev_scores, step=num_steps)
 
-                    print(dev_output)
-                    if dev_scores["dev_F1_ign"] > best_score:
-                        best_score = dev_scores["dev_F1_ign"]
-                        best_offi_results = official_results
-                        best_results = results
-                        best_output = dev_output
-
-                        ckpt_file = os.path.join(args.save_path, "best.ckpt")
-                        print(f"saving model checkpoint into {ckpt_file} ...")
-                        torch.save(model.state_dict(), ckpt_file)
+                    # print(dev_output)
+                    # if dev_scores["dev_F1_ign"] > best_score:
+                    #     best_score = dev_scores["dev_F1_ign"]
+                    #     best_offi_results = official_results
+                    #     best_results = results
+                    #     best_output = dev_output
+                    #
+                    #     ckpt_file = os.path.join(args.save_path, "best.ckpt")
+                    #     print(f"saving model checkpoint into {ckpt_file} ...")
+                    #     torch.save(model.state_dict(), ckpt_file)
 
                     if epoch == train_iterator[-1]:  # last epoch
 
@@ -110,7 +110,7 @@ def train(args, model, train_features, dev_features):
                         score_file = os.path.join(args.save_path, "scores.csv")
                         results_file = os.path.join(args.save_path, f"topk_{args.pred_file}")
 
-                        dump_to_file(best_offi_results, pred_file, best_output, score_file, best_results, results_file)
+                        # dump_to_file(best_offi_results, pred_file, best_output, score_file, best_results, results_file)
 
         return num_steps
 
