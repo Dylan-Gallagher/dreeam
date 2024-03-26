@@ -102,7 +102,7 @@ def train(args, model, train_features, dev_features):
 
                     if epoch == train_iterator[-1]:  # last epoch
 
-                        ckpt_file = os.path.join(args.save_path, "last.ckpt")
+                        ckpt_file = os.path.join(args.save_path, "best.ckpt")
                         print(f"saving model checkpoint into {ckpt_file} ...")
                         torch.save(model.state_dict(), ckpt_file)
 
