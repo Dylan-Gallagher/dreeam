@@ -164,8 +164,6 @@ class DocREModel(nn.Module):
             :logits: (num_ent_pairs_all_batches, num_rel_labels)
         '''
 
-        pdb.set_trace()
-        
         hs = torch.tanh(self.head_extractor(torch.cat([hs, rs], dim=-1)))
         ts = torch.tanh(self.tail_extractor(torch.cat([ts, rs], dim=-1)))
         # split into several groups.
