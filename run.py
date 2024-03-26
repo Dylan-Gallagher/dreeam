@@ -343,7 +343,7 @@ def main():
             param.requires_grad = True
 
         # Replace the last layer with a new one with the correct shape
-        model.bilinear = torch.nn.Linear(model.bilinear.in_features, 26)
+        model.bilinear = torch.nn.Linear(model.bilinear.in_features, 26).to(device)
 
         create_directory(save_path_)
         args.save_path = save_path_
