@@ -3,6 +3,7 @@ import argparse
 
 def add_args(parser):
     parser.add_argument("--do_train", action="store_true")
+    parser.add_argument("--replace_output_layer", action="store_true")
     parser.add_argument("--freeze_early_layers", action="store_true")
     parser.add_argument("--data_dir", default="./dataset/docred", type=str)
     parser.add_argument("--transformer_type", default="bert", type=str)
