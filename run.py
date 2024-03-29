@@ -334,13 +334,14 @@ def main():
 
     if args.do_train:  # Training
 
-        # Freeze the earlier layers
-        for param in model.parameters():
-            param.requires_grad = False
+        if args.freeze_early_layers:
+            # Freeze the earlier layers
+            for param in model.parameters():
+                param.requires_grad = False
 
-        # Unfreeze the last layer
-        for param in model.bilinear.parameters():
-            param.requires_grad = True
+            # Unfreeze the last layer
+            for param in model.bilinear.parameters():
+                param.requires_grad = True
 
         # Replace the last layer with a new one with the correct shape
         model.bilinear = torch.nn.Linear(model.bilinear.in_features, 26).to(device)
