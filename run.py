@@ -40,10 +40,11 @@ def load_input(batch, device, tag="dev"):
 
 
 def train(args, model, train_features, dev_features):
-    def finetune(features, optimizer, num_epoch, num_steps):
+    def finetune(train_features, dev_features, optimizer, num_epoch, num_steps):
         best_score = -1
-        train_dataloader = DataLoader(features, batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn,
+        train_dataloader = DataLoader(train_features, batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn,
                                       drop_last=True)
+        validation_dataloader = DataLoader(dev_features, batch_size=args.dev_batch_size, shuffle=False, collate_fn=collate_fn, drop_last=True)
         train_iterator = range(int(num_epoch))
         total_steps = int(len(train_dataloader) * num_epoch // args.gradient_accumulation_steps)
         warmup_steps = int(total_steps * args.warmup_ratio)
@@ -93,16 +94,17 @@ def train(args, model, train_features, dev_features):
                     # if dev_scores["dev_F1_ign"] > best_score:
                     #     best_score = dev_scores["dev_F1_ign"]
                     #     best_offi_results = official_results
-                    #     best_results = results
+                    #     best_resuts = results
                     #     best_output = dev_output
                     #
                     #     ckpt_file = os.path.join(args.save_path, "best.ckpt")
                     #     print(f"saving model checkpoint into {ckpt_file} ...")
                     #     torch.save(model.state_dict(), ckpt_file)
 
-                    if epoch == train_iterator[-1]:  # last epoch
+                    # Save every n epochs and on last epoch
+                    if epoch == train_iterator[-1] or epoch % args.save_every_n_epochs == 0:
 
-                        ckpt_file = os.path.join(args.save_path, "best.ckpt")
+                        ckpt_file = os.path.join(args.save_path, f"{epoch}.ckpt")
                         print(f"saving model checkpoint into {ckpt_file} ...")
                         torch.save(model.state_dict(), ckpt_file)
 
@@ -111,6 +113,17 @@ def train(args, model, train_features, dev_features):
                         results_file = os.path.join(args.save_path, f"topk_{args.pred_file}")
 
                         # dump_to_file(best_offi_results, pred_file, best_output, score_file, best_results, results_file)
+
+            # Validation loop
+            model.eval()
+            with torch.no_grad():
+                for batch in validation_dataloader:
+                    inputs = load_input(batch, args.device)
+                    outputs = model(**inputs)
+                    print(outputs["loss"])
+
+
+
 
         return num_steps
 
@@ -124,7 +137,7 @@ def train(args, model, train_features, dev_features):
     num_steps = 0
     set_seed(args)
     model.zero_grad()
-    finetune(train_features, optimizer, args.num_train_epochs, num_steps)
+    finetune(train_features, dev_features, optimizer, args.num_train_epochs, num_steps)
 
 
 def get_preds(args, model, features, tag="dev"):
@@ -298,7 +311,7 @@ def main():
     args.n_gpu = torch.cuda.device_count()
     args.device = device
 
-    num_model_relations = 97 if args.do_train else 26
+    num_model_relations = 122
 
     config = AutoConfig.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
@@ -425,3 +438,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
